@@ -9,7 +9,7 @@ from time import time
 from math import log
 from sys import exit
 
-from constants import *
+from config import *
 
 class App:
 
