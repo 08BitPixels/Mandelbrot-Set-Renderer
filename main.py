@@ -1,4 +1,5 @@
 import pygame
+
 from multiprocessing import Process
 from multiprocessing.shared_memory import ShareableList
 from numba import njit
@@ -7,6 +8,7 @@ from win11toast import toast, notify, update_progress
 from time import time
 from math import log
 from sys import exit
+
 from constants import *
 
 class App:
