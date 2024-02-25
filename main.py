@@ -9,12 +9,20 @@ from time import time
 from math import log
 from sys import exit
 
-from constants import *
+from config import *
+
+# PYGAME SETUP
+pygame.init()
+if not MINIMISED: screen = pygame.display.set_mode(RESOLUTION)
+elif MINIMISED: screen = pygame.display.set_mode((10, 10))
+pygame.display.set_icon(pygame.image.load('images/mandelbrot-set.png'))
+pygame.display.set_caption('Mandelbrot Set Renderer')
+if MINIMISED: pygame.display.iconify()
 
 class App:
 
 	def __init__(self) -> None:
-		self.fractal = Fractal()
+		self.fractal = Fractal(self)
 
 	def format_time(self, secs: float | int) -> str: # -> hrs:mins:secs
 
@@ -54,19 +62,14 @@ class App:
 		
 class Fractal:
 
-	def __init__(self) -> None:
-		pass
+	def __init__(self, app: App) -> None:
+		self.app = app
 
 	def render(
 		
 		self,
-		original_resolution: tuple,
-		screen_arrays: ndarray,
-		screen_coords: tuple,
-		surface: str,
-		surface_size: tuple,
-		gradient: str,
-		gradient_size: tuple,
+		surface: pygame.Surface,
+		gradient: pygame.Surface,
 		mode: str,
 		max_iter: int, 
 		zoom: int | float,
@@ -76,19 +79,15 @@ class Fractal:
 	) -> pygame.PixelArray:
 
 		print('\nRendering...')
-		gradient = pygame.image.fromstring(gradient, gradient_size, 'RGB')
-		surface = pygame.image.fromstring(surface, surface_size, 'RGB')
 
 		if mode == 'mandelbrot':
 
 			screen_array = self.mandelbrot_set(
 				
-				screen_coords = screen_coords,
 				screen_array = pygame.surfarray.array3d(surface),
 				gradient_array = pygame.surfarray.array3d(gradient),
 				gradient_size = gradient.get_width(),
 				resolution = surface.get_size(),
-				original_resolution = original_resolution,
 				max_iter = max_iter,
 				zoom = zoom,
 				colour_density = colour_density,
@@ -100,12 +99,10 @@ class Fractal:
 
 			screen_array = self.julia_set(
 
-				screen_coords = screen_coords,
 				screen_array = pygame.surfarray.array3d(surface),
 				gradient_array = pygame.surfarray.array3d(gradient),
 				gradient_size = gradient.get_width(),
 				resolution = surface.get_size(),
-				original_resolution = original_resolution,
 				max_iter = max_iter,
 				colour_density = colour_density,
 				zoom = zoom,
@@ -119,18 +116,16 @@ class Fractal:
 			pygame.quit()
 			exit()
 
-		screen_arrays[screen_coords[0] * COLS + screen_coords[1]] = screen_array
+		return screen_array
 
 	@ staticmethod
 	@ njit(fastmath = True)
 	def mandelbrot_set(
 
-		screen_coords: tuple,
 		screen_array: pygame.PixelArray,
 		gradient_array: pygame.PixelArray,
 		gradient_size: int | float,
 		resolution: tuple,
-		original_resolution: tuple,
 		max_iter: int, 
 		zoom: int | float, 
 		colour_density: int | float,
@@ -138,7 +133,7 @@ class Fractal:
 		
 	) -> pygame.PixelArray:
 
-		center_x, center_y = (original_resolution[0] / 2) - (resolution[0] * screen_coords[0]), (original_resolution[1] / 2) - (resolution[1] * screen_coords[1])
+		center_x, center_y = (resolution[0] / 2, resolution[1] / 2)
 
 		for x in range(resolution[0]):
 		
@@ -168,12 +163,10 @@ class Fractal:
 	@ njit(fastmath = True)
 	def julia_set(
 
-		screen_coords: tuple,
 		screen_array: pygame.PixelArray,
 		gradient_array: pygame.PixelArray,
 		gradient_size: int | float,
 		resolution: tuple,
-		original_resolution: tuple,
 		max_iter: int, 
 		zoom: int | float,
 		colour_density: int | float,
@@ -181,7 +174,7 @@ class Fractal:
 		
 	) -> pygame.PixelArray:
 
-		center_x, center_y = (original_resolution[0] / 2) - (resolution[0] * screen_coords[0]), (original_resolution[1] / 2) - (resolution[1] * screen_coords[1])
+		center_x, center_y = (resolution[0] / 2, resolution[1] / 2)
 
 		for x in range(resolution[0]):
 				
@@ -206,76 +199,31 @@ class Fractal:
 	
 		return screen_array
 
-def main():
+def main() -> None:
 
 	app = App()
 	fractal = app.fractal
 
 	image = pygame.Surface(RESOLUTION)
-	surfaces = ndarray((ROWS, COLS), pygame.Surface)
-	processes = ndarray((ROWS, COLS), Process)
-	screen_arrays = ShareableList([0 for i in range(CELLS)])
-
-	for col in range(COLS):
-
-		for row in range(ROWS):
-
-			surfaces[row][col] = pygame.Surface((RESOLUTION[0] / COLS, RESOLUTION[1] / ROWS))
-
-	for col in range(COLS):
-
-		for row in range(ROWS):
-
-			surface = surfaces[col][row]
-			surface_string = pygame.image.tostring(surface, 'RGB')
-			surface_size = surface.get_size()
-
-			processes[row][col] = Process(
-
-											target = fractal.render,
-											args = (
-														RESOLUTION,
-														screen_arrays,
-														(col, row),
-														surface_string,
-														surface_size,
-														gradient_string,
-														gradient_size,
-														MODE,
-														MAX_ITER,
-														ZOOM,
-														COLOUR_DENSITY,
-														OFFSET
-
-											)
-									)
 
 	start_time = time()
+	screen_array = fractal.render(
 
-	for col in range(COLS):
+		surface = image,
+		gradient = pygame.image.load(GRADIENT).convert_alpha(),
 
-		for row in range(ROWS):
-
-			processes[row][col].start()
-
+		mode = MODE,
+		max_iter = MAX_ITER,
+		zoom = ZOOM,
+		colour_density = COLOUR_DENSITY,
+		offset = OFFSET,
+		
+	)
 	finish_time = time()
 	time_lapsed = app.format_time(finish_time - start_time)
 	print(f"\nRendering Completed ({time_lapsed})")
-
-	screen_arrays = reshape(screen_arrays, (COLS, ROWS))
-	print(screen_arrays)
-
-	for col in range(COLS): 
-
-		for row in range(ROWS):
 			
-			pygame.surfarray.blit_array(surfaces[row][col], screen_arrays[row][col])
-		
-	for col in range(COLS): 
-
-		for row in range(ROWS):
-			
-			image.blit(surfaces[row][col], ((RESOLUTION[0] / COLS) * col, (RESOLUTION[1] / ROWS) * row))
+	pygame.surfarray.blit_array(image, screen_array)
 
 	file_name = f'{MODE.capitalize()} Set Render - MAX_ITER = {MAX_ITER}, ZOOM = {ZOOM}, OFFSET = {OFFSET}, COLOUR_DENSITY = {COLOUR_DENSITY}, SCALE = {SCALE}.png'
 
@@ -305,18 +253,4 @@ def main():
 	pygame.quit()
 	exit()
 			
-if __name__ == '__main__': 
-
-	# PYGAME SETUP
-	pygame.init()
-	if not MINIMISED: screen = pygame.display.set_mode(RESOLUTION)
-	elif MINIMISED: screen = pygame.display.set_mode((10, 10))
-	pygame.display.set_icon(pygame.image.load('images/mandelbrot-set.png'))
-	pygame.display.set_caption('Mandelbrot Set Renderer')
-	if MINIMISED: pygame.display.iconify()
-	
-	gradient = pygame.image.load(GRADIENT)
-	gradient_string = pygame.image.tostring(gradient, 'RGB')
-	gradient_size = gradient.get_size()
-
-	main()
+main()
