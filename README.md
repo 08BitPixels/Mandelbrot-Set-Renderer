@@ -1,9 +1,13 @@
 ===== ABOUT =====
 
-- Built on pygame.
-- Uses numba (converts code to machine code) to make rendering fast.
+- Built on PyGame.
+- Uses Numba (converts Python to machine code) to make calculations fast.
 
 ===== CONFIG =====
 
 - Use config.py to configure the render.
-- You can select if you want the render to blit to the output screen, or if you want it to save straightaway.
+- Among other things, you can configure:
+    - The resolution of the render
+    - Autosave settings (for long renders)
+    - The gradient used to shade the render
+    - Many other settings concerning the Mandelbrot Set itself.
