@@ -1,9 +1,6 @@
 import pygame
 
-from multiprocessing import Process
-from multiprocessing.shared_memory import ShareableList
 from numba import njit
-from numpy import ndarray, reshape
 from win11toast import toast, notify, update_progress
 from time import time
 from math import log
@@ -36,7 +33,7 @@ class App:
 
 	def save(self, surface: pygame.Surface, location: str, name: str) -> None: # Save screen Surface to file
 
-		notify(
+		if NOTIFICATIONS: notify(
 			progress = {
 				'title': f'{MODE.capitalize()} Set Renderer',
 				'status': 'Saving',
@@ -53,7 +50,7 @@ class App:
 		time_lapsed = self.format_time(finish_time - start_time)
 
 		print(f"Saving Completed ({time_lapsed})")
-		update_progress(
+		if NOTIFICATIONS: update_progress(
 			progress = {
 				'value': '100', 
 				'status': f"Saving Completed ({time_lapsed})"
@@ -234,7 +231,7 @@ def main() -> None:
 
 	if AUTOSAVE: 
 		
-		toast(
+		if NOTIFICATIONS: toast(
 			f'{MODE.capitalize()} Set Renderer', 
 			f'Rendering Completed ({time_lapsed})',
 		)
@@ -242,12 +239,19 @@ def main() -> None:
 	
 	elif not AUTOSAVE:
 	
-		toast(
-			f'{MODE.capitalize()} Set Renderer', 
-			f'Rendering Completed ({time_lapsed})',
-			button = 'Save',
-			on_click = lambda args: app.save(image, 'renders', file_name)
-		)
+		if NOTIFICATIONS:
+
+			toast(
+				f'{MODE.capitalize()} Set Renderer', 
+				f'Rendering Completed ({time_lapsed})',
+				button = 'Save',
+				on_click = lambda args: app.save(image, '/renders', file_name)
+			)
+			
+		if not NOTIFICATIONS:
+
+			choice = input('\nSave? y/n > ')
+			if choice.lower() == 'y': app.save(image, '/renders', file_name)
 
 	print('\nRenderer Closed')
 	pygame.quit()
