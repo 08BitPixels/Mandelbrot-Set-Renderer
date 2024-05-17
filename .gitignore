@@ -1,2 +1,6 @@
 
 current-render.txt
+.replit
+poetry.lock
+pyproject.toml
+replit.nix
