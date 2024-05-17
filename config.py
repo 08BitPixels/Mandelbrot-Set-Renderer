@@ -1,7 +1,6 @@
-SCALE = 1
+SCALE = 0.1
 AUTOSAVE = False
 MINIMISED = False
-NOTIFICATIONS = False
 GRADIENT = 'images/gradients/blue-white-orange-maroon.png'
 RESOLUTION = (1000 * SCALE, 800 * SCALE)
 

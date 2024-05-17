@@ -1,7 +1,6 @@
 import pygame
 
 from numba import njit
-from win11toast import toast, notify, update_progress
 from time import time
 from math import log
 from sys import exit
@@ -33,14 +32,6 @@ class App:
 
 	def save(self, surface: pygame.Surface, location: str, name: str) -> None: # Save screen Surface to file
 
-		if NOTIFICATIONS: notify(
-			progress = {
-				'title': f'{MODE.capitalize()} Set Renderer',
-				'status': 'Saving',
-				'value': '0',
-			}
-		)
-
 		print('\nSaving...')
 		start_time = time()
 
@@ -50,12 +41,6 @@ class App:
 		time_lapsed = self.format_time(finish_time - start_time)
 
 		print(f"Saving Completed ({time_lapsed})")
-		if NOTIFICATIONS: update_progress(
-			progress = {
-				'value': '100', 
-				'status': f"Saving Completed ({time_lapsed})"
-			}
-		)
 		
 class Fractal:
 
@@ -238,20 +223,9 @@ def main() -> None:
 		app.save(image, 'renders', file_name)
 	
 	elif not AUTOSAVE:
-	
-		if NOTIFICATIONS:
 
-			toast(
-				f'{MODE.capitalize()} Set Renderer', 
-				f'Rendering Completed ({time_lapsed})',
-				button = 'Save',
-				on_click = lambda args: app.save(image, '/renders', file_name)
-			)
-			
-		if not NOTIFICATIONS:
-
-			choice = input('\nSave? y/n > ')
-			if choice.lower() == 'y': app.save(image, '/renders', file_name)
+		choice = input('\nSave? y/n > ')
+		if choice.lower() == 'y': app.save(image, '/renders', file_name)
 
 	print('\nRenderer Closed')
 	pygame.quit()
