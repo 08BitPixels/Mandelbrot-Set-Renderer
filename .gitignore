@@ -1,6 +1,7 @@
-
 current-render.txt
 .replit
 poetry.lock
 pyproject.toml
 replit.nix
+__pycache__/
+.vscode/
